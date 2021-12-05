@@ -80,7 +80,7 @@ if selected_tool == all_tool:
       df["weekend"] = dates.dayofweek > 4
       if dayofweek == 'Weekday':
         f'### {dayofweek} Ridership Table ({metric})'
-        df_weekday = df[df["weekend"] == "false"]
+        df_weekday = df[df["weekend"] == 0]
         df_weekday.drop(['weekend'], axis=1)
         g_mean_week = int(df_weekday['graveyard'].mean())
         m_mean_week = int(df_weekday['morning'].mean())
@@ -95,7 +95,7 @@ if selected_tool == all_tool:
         df_weekday = df[df["weekend"] == "true"]
         df_weekday.drop(['weekend'], axis=1)
         f'### {dayofweek} Ridership Table ({metric})'
-        df_weekday = df[df["weekend"] == "false"]
+        df_weekday = df[df["weekend"] == 1]
         df_weekday.drop(['weekend'], axis=1)
         g_mean_week = int(df_weekday['graveyard'].mean())
         m_mean_week = int(df_weekday['morning'].mean())
