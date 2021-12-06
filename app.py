@@ -78,31 +78,18 @@ if selected_tool == all_tool:
       dayofweek = st.selectbox('Choose a filter', ['Weekday', 'Weekend'])
       dates = pd.to_datetime(df.index, format="%Y/%m/%d")
       df["weekend"] = dates.dayofweek > 4
+      f'### {dayofweek} Ridership Table ({metric})'
       if dayofweek == 'Weekday':
-        f'### {dayofweek} Ridership Table ({metric})'
         df_weekday = df[df["weekend"] == False]
-        df_weekday.drop(['weekend'], axis=1)
-        g_mean_week = int(df_weekday['graveyard'].mean())
-        m_mean_week = int(df_weekday['morning'].mean())
-        a_mean_week = int(df_weekday['afternoon'].mean())
-        n_mean_week = int(df_weekday['night'].mean())
-        f'Average Graveyard (12 AM - 6 AM): {g_mean_week}'
-        f'Average Morning (6 AM - Noon): {m_mean_week}'
-        f'Average Graveyard (Noon - 6 PM): {a_mean_week}'
-        f'Average Graveyard (6 PM - 12 AM): {n_mean_week}'
-        st.line_chart(df_weekday)
       if dayofweek == 'Weekend':
-        df_weekday = df[df["weekend"] == "true"]
-        df_weekday.drop(['weekend'], axis=1)
-        f'### {dayofweek} Ridership Table ({metric})'
         df_weekday = df[df["weekend"] == True]
-        df_weekday.drop(['weekend'], axis=1)
-        g_mean_week = int(df_weekday['graveyard'].mean())
-        m_mean_week = int(df_weekday['morning'].mean())
-        a_mean_week = int(df_weekday['afternoon'].mean())
-        n_mean_week = int(df_weekday['night'].mean())
-        f'Average Graveyard (12 AM - 6 AM): {g_mean_week}'
-        f'Average Morning (6 AM - Noon): {m_mean_week}'
-        f'Average Graveyard (Noon - 6 PM): {a_mean_week}'
-        f'Average Graveyard (6 PM - 12 AM): {n_mean_week}'
-        st.line_chart(df_weekday)
+      df_weekday = df_weekday.drop(labels=['weekend'], axis=1)
+      g_mean_week = int(df_weekday['graveyard'].mean())
+      m_mean_week = int(df_weekday['morning'].mean())
+      a_mean_week = int(df_weekday['afternoon'].mean())
+      n_mean_week = int(df_weekday['night'].mean())
+      f'Average Graveyard (12 AM - 6 AM): {g_mean_week}'
+      f'Average Morning (6 AM - Noon): {m_mean_week}'
+      f'Average Graveyard (Noon - 6 PM): {a_mean_week}'
+      f'Average Graveyard (6 PM - 12 AM): {n_mean_week}'
+      st.line_chart(df_weekday)
