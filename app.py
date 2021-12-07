@@ -224,6 +224,41 @@ if selected_tool == line_tool:
       color='key:N'
     )
     st.altair_chart(chart, use_container_width=True)
+    map_table_line = f'''select id, graveyard + morning + afternoon + night as total, name, lon, lat
+                        from (select station_id, sum(graveyard_{metric.lower()}) as graveyard, 
+                        sum(morning_{metric.lower()}) as morning, sum(afternoon_{metric.lower()}) 
+                        as afternoon, sum(night_{metric.lower()}) as night from daily_count 
+                        where date like "{year}%" and station_id in 
+                        (select id from station_data where name REGEXP "-[A-Z0-9]*{line}[A-Z0-9]*$")
+                        group by station_id)
+                        inner join station_data on station_data.id = station_id'''
+    map_df_line = query_db(map_table_line).copy()
+    map_df_line['qt'] = map_df_line.total.rank(pct = True)
+    layer = pdk.Layer(
+      "ColumnLayer",
+      data=map_df_line,
+      get_position="[lon, lat]",
+      get_elevation_value="total",
+      elevation_scale=1,
+      radius=50,
+      auto_highlight=True,
+      get_fill_color=["qt * 140 + 100", 0, 0, "qt * 140"],
+      elevation_range=[map_df_line.total.min, map_df_line.total.max],
+      pickable=True,
+      extruded=True,
+    )
+    # Set the viewport location
+    view_state = pdk.ViewState(
+      longitude=-73.987495, latitude=40.75529, zoom=10, min_zoom=5, max_zoom=15, pitch=40.5, bearing=60
+    )
+    # Combined all of it and render a viewport
+    r = pdk.Deck(
+      map_style="mapbox://styles/mapbox/light-v9",
+      layers=[layer],
+      initial_view_state=view_state,
+      tooltip={"html": "<b>{name}</b><br>Total metric {total}", "style": {"color": "white"}},
+    )
+    st.pydeck_chart(r)
 
 ############
 # VIEW BY STATION
