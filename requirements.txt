@@ -3,3 +3,4 @@ sqlalchemy
 streamlit
 altair
 numpy
+pydeck

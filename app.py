@@ -5,6 +5,7 @@ import streamlit as st
 import altair as alt
 import numpy as np
 import datetime
+import pydeck as pdk
 
 '# MTA Swipes Viewer'
 
@@ -38,7 +39,7 @@ if selected_tool == all_tool:
   year = st.selectbox('Choose a year', [2021,2020,2019,2018,2017,2016])
   metric = st.selectbox('Choose a metric', ['Entries', 'Exits'])
   if year and system and metric:
-    f'### Yearly Ridership Table ({metric})'
+    f'### {year} Ridership Table ({metric})'
     sql_table = f'''select date, sum(graveyard_{metric.lower()}) as graveyard, 
                     sum(morning_{metric.lower()}) as morning, sum(afternoon_{metric.lower()}) 
                     as afternoon, sum(night_{metric.lower()}) as night from daily_count 
@@ -61,6 +62,44 @@ if selected_tool == all_tool:
       color='key:N'
     )
     st.altair_chart(chart, use_container_width=True)
+
+    f'### {year} Ridership Map ({metric})'
+    map_table = f'''select id, graveyard + morning + afternoon + night as total, name, lon, lat
+                    from (select station_id, sum(graveyard_{metric.lower()}) as graveyard, 
+                    sum(morning_{metric.lower()}) as morning, sum(afternoon_{metric.lower()}) 
+                    as afternoon, sum(night_{metric.lower()}) as night from daily_count 
+                    where date like "{year}%" and station_id in 
+                    (select id from station_data where type = "{system}")
+                    group by station_id)
+                    inner join station_data on station_data.id = station_id'''
+    map_df = query_db(map_table).copy()
+    map_df['qt'] = map_df.total.rank(pct = True)
+    layer = pdk.Layer(
+      "ColumnLayer",
+      data=map_df,
+      get_position="[lon, lat]",
+      get_elevation_value="total",
+      elevation_scale=1,
+      radius=50,
+      auto_highlight=True,
+      get_fill_color=["qt * 255", 0, 0, "qt * 255"],
+      elevation_range=[map_df.total.min, map_df.total.max],
+      pickable=True,
+      extruded=True,
+    )
+    # Set the viewport location
+    view_state = pdk.ViewState(
+      longitude=-73.987495, latitude=40.75529, zoom=10, min_zoom=5, max_zoom=15, pitch=40.5, bearing=60
+    )
+    # Combined all of it and render a viewport
+    r = pdk.Deck(
+      map_style="mapbox://styles/mapbox/light-v9",
+      layers=[layer],
+      initial_view_state=view_state,
+      tooltip={"html": "<b>{name}</b><br>Total metric {total}", "style": {"color": "white"}},
+    )
+    st.pydeck_chart(r)
+
 
     month_filter = 'Filter by Month'
     week_filter = 'Filter by Weekday/Weekend'
@@ -91,6 +130,42 @@ if selected_tool == all_tool:
           color='key:N'
         )
         st.altair_chart(chart, use_container_width=True)
+        f'### {format_func(month)} Ridership Map ({metric})'
+        map_table_month = f'''select id, graveyard + morning + afternoon + night as total, name, lon, lat
+                        from (select station_id, sum(graveyard_{metric.lower()}) as graveyard, 
+                        sum(morning_{metric.lower()}) as morning, sum(afternoon_{metric.lower()}) 
+                        as afternoon, sum(night_{metric.lower()}) as night from daily_count 
+                        where date like "{year}/{month}%" and station_id in 
+                        (select id from station_data where type = "{system}")
+                        group by station_id)
+                        inner join station_data on station_data.id = station_id'''
+        map_df_month = query_db(map_table_month).copy()
+        map_df_month['qt'] = map_df_month.total.rank(pct = True)
+        layer = pdk.Layer(
+          "ColumnLayer",
+          data=map_df_month,
+          get_position="[lon, lat]",
+          get_elevation_value="total",
+          elevation_scale=1,
+          radius=50,
+          auto_highlight=True,
+          get_fill_color=["qt * 255", 0, 0, "qt * 255"],
+          elevation_range=[map_df_month.total.min, map_df_month.total.max],
+          pickable=True,
+          extruded=True,
+        )
+        # Set the viewport location
+        view_state = pdk.ViewState(
+          longitude=-73.987495, latitude=40.75529, zoom=10, min_zoom=5, max_zoom=15, pitch=40.5, bearing=60
+        )
+        # Combined all of it and render a viewport
+        r = pdk.Deck(
+          map_style="mapbox://styles/mapbox/light-v9",
+          layers=[layer],
+          initial_view_state=view_state,
+          tooltip={"html": "<b>{name}</b><br>Total metric {total}", "style": {"color": "white"}},
+        )
+        st.pydeck_chart(r)
     if filter_tool == week_filter:
       dayofweek = st.selectbox('Choose a filter', ['Weekday', 'Weekend'])
       dates = pd.to_datetime(df['date'], format="%Y/%m/%d")
