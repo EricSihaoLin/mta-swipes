@@ -74,15 +74,18 @@ if selected_tool == all_tool:
                     inner join station_data on station_data.id = station_id'''
     map_df = query_db(map_table).copy()
     map_df['qt'] = map_df.total.rank(pct = True)
+    map_df['red'] = np.where(map_df['qt']<= 0.5, map_df['qt'] * 2 * 255, 255)
+    map_df['green'] = np.where(map_df['qt']<= 0.5, 255, (1 - map_df['qt']) * 2 * 255)
+    map_df['elevation'] = map_df['total'] - map_df['total'].min()
     layer = pdk.Layer(
       "ColumnLayer",
       data=map_df,
       get_position="[lon, lat]",
-      get_elevation_value="total",
+      get_elevation_value="elevation",
       elevation_scale=1,
       radius=50,
       auto_highlight=True,
-      get_fill_color=["qt * 255", 0, 0, "qt * 255"],
+      get_fill_color=["red", "green", 0, "qt * 255"],
       elevation_range=[map_df.total.min, map_df.total.max],
       pickable=True,
       extruded=True,
@@ -141,15 +144,18 @@ if selected_tool == all_tool:
                         inner join station_data on station_data.id = station_id'''
         map_df_month = query_db(map_table_month).copy()
         map_df_month['qt'] = map_df_month.total.rank(pct = True)
+        map_df_month['red'] = np.where(map_df_month['qt']<= 0.5, map_df_month['qt'] * 2 * 255, 255)
+        map_df_month['green'] = np.where(map_df_month['qt']<= 0.5, 255, (1 - map_df_month['qt']) * 2 * 255)
+        map_df_month['elevation'] = map_df_month['total'] - map_df_month['total'].min()
         layer = pdk.Layer(
           "ColumnLayer",
           data=map_df_month,
           get_position="[lon, lat]",
-          get_elevation_value="total",
+          get_elevation_value="elevation",
           elevation_scale=1,
           radius=50,
           auto_highlight=True,
-          get_fill_color=["qt * 255", 0, 0, "qt * 255"],
+          get_fill_color=["red", "green", 0, "qt * 255"],
           elevation_range=[map_df_month.total.min, map_df_month.total.max],
           pickable=True,
           extruded=True,
@@ -163,7 +169,7 @@ if selected_tool == all_tool:
           map_style="mapbox://styles/mapbox/light-v9",
           layers=[layer],
           initial_view_state=view_state,
-          tooltip={"html": "<b>{name}</b><br>Total metric {total}", "style": {"color": "white"}},
+          tooltip={"html": "<b>{name}</b><br>Total montly metric {total}", "style": {"color": "white"}},
         )
         st.pydeck_chart(r)
     if filter_tool == week_filter:
@@ -234,6 +240,9 @@ if selected_tool == line_tool:
                         inner join station_data on station_data.id = station_id'''
     map_df_line = query_db(map_table_line).copy()
     map_df_line['qt'] = map_df_line.total.rank(pct = True)
+    map_df_line['red'] = np.where(map_df_line['qt']<= 0.5, map_df_line['qt'] * 2 * 255, 255)
+    map_df_line['green'] = np.where(map_df_line['qt']<= 0.5, 255, (1 - map_df_line['qt']) * 2 * 255)
+    map_df_line['elevation'] = map_df_line['total'] - map_df_line['total'].min()
     layer = pdk.Layer(
       "ColumnLayer",
       data=map_df_line,
@@ -242,7 +251,7 @@ if selected_tool == line_tool:
       elevation_scale=1,
       radius=50,
       auto_highlight=True,
-      get_fill_color=["qt * 140 + 100", 0, 0, "qt * 140"],
+      get_fill_color=["red", "green", 0, "qt * 255"],
       elevation_range=[map_df_line.total.min, map_df_line.total.max],
       pickable=True,
       extruded=True,
